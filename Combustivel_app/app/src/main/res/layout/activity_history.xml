@@ -34,7 +34,17 @@
         android:layout_marginTop="16dp"
         android:text="Adicionar KM" />
 
+    <ToggleButton
+        android:id="@+id/alternarVisualizacaoHistorico"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:checked="false"
+        android:textOff="Lista"
+        android:textOn="Gráfico" />
+
     <TextView
+        android:id="@+id/tituloConteudoHistorico"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
@@ -43,6 +53,7 @@
         android:textStyle="bold" />
 
     <ScrollView
+        android:id="@+id/scrollListaHistorico"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
@@ -56,5 +67,14 @@
             android:orientation="vertical" />
 
     </ScrollView>
+
+    <com.example.projetodoappdecombustivel.KmChartView
+        android:id="@+id/graficoKmHistorico"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_weight="1"
+        android:minHeight="220dp"
+        android:visibility="gone" />
 
 </LinearLayout>

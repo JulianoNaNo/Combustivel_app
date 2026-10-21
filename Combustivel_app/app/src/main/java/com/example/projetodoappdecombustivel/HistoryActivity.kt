@@ -3,10 +3,13 @@ package com.example.projetodoappdecombustivel
 import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.ToggleButton
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import java.text.DecimalFormat
@@ -29,6 +32,9 @@ class HistoryActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.botaoAdicionarKm).setOnClickListener {
             abrirPopupAdicionarKm()
+        }
+        findViewById<ToggleButton>(R.id.alternarVisualizacaoHistorico).setOnCheckedChangeListener { _, mostrarGrafico ->
+            atualizarModoVisualizacao(mostrarGrafico)
         }
         atualizarHistorico()
     }
@@ -82,6 +88,8 @@ class HistoryActivity : AppCompatActivity() {
         val lista = findViewById<LinearLayout>(R.id.listaHistorico)
         lista.removeAllViews()
         val registros = veiculo.history.sortedByDescending { it.timestamp }
+        findViewById<KmChartView>(R.id.graficoKmHistorico)
+            .definirRegistros(registros.sortedBy { it.timestamp })
 
         if (registros.isEmpty()) {
             lista.addView(TextView(this).apply {
@@ -124,6 +132,15 @@ class HistoryActivity : AppCompatActivity() {
             }
             lista.addView(linha, parametrosLinha)
         }
+    }
+
+    private fun atualizarModoVisualizacao(mostrarGrafico: Boolean) {
+        findViewById<ScrollView>(R.id.scrollListaHistorico).visibility =
+            if (mostrarGrafico) View.GONE else View.VISIBLE
+        findViewById<KmChartView>(R.id.graficoKmHistorico).visibility =
+            if (mostrarGrafico) View.VISIBLE else View.GONE
+        findViewById<TextView>(R.id.tituloConteudoHistorico).text =
+            if (mostrarGrafico) "Evolução do KM" else "Registros"
     }
 
     private fun formatarKm(km: Double): String =
