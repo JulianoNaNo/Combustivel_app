@@ -146,7 +146,7 @@ class HistoryActivity : AppCompatActivity() {
         findViewById<KmChartView>(R.id.graficoKmHistorico).visibility =
             if (mostrarGrafico) View.VISIBLE else View.GONE
         findViewById<TextView>(R.id.tituloConteudoHistorico).text =
-            if (mostrarGrafico) "Evolução do KM" else "Registros"
+            if (mostrarGrafico) "Autonomia (km/L)" else "Registros"
     }
 
     private fun formatarKm(km: Double): String =

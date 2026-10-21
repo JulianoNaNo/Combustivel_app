@@ -18,7 +18,9 @@ class KmChartView @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
-    private var registros: List<KmRecord> = emptyList()
+    private data class PontoAutonomia(val timestamp: Long, val kmPorLitro: Double)
+
+    private var pontos: List<PontoAutonomia> = emptyList()
 
     private val linhaGrafico = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.rgb(21, 101, 192)
@@ -48,11 +50,17 @@ class KmChartView @JvmOverloads constructor(
     private val formatoData = SimpleDateFormat("dd/MM/yy", Locale("pt", "BR"))
 
     fun definirRegistros(novosRegistros: List<KmRecord>) {
-        registros = novosRegistros.sortedBy { it.timestamp }
-        contentDescription = if (registros.isEmpty()) {
-            "Gráfico sem registros de quilometragem"
+        val ordenados = novosRegistros.sortedBy { it.timestamp }
+        pontos = ordenados.zipWithNext().mapNotNull { (anterior, atual) ->
+            val litros = atual.litersFueled ?: return@mapNotNull null
+            val distancia = atual.km - anterior.km
+            if (litros <= 0.0 || distancia <= 0.0) return@mapNotNull null
+            PontoAutonomia(atual.timestamp, distancia / litros)
+        }
+        contentDescription = if (pontos.isEmpty()) {
+            "Gráfico sem dados suficientes para calcular autonomia"
         } else {
-            "Gráfico da quilometragem ao longo do tempo, com ${registros.size} registros"
+            "Gráfico da autonomia em quilômetros por litro, com ${pontos.size} abastecimentos"
         }
         invalidate()
     }
@@ -60,9 +68,9 @@ class KmChartView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        if (registros.isEmpty()) {
+        if (pontos.isEmpty()) {
             texto.textAlign = Paint.Align.CENTER
-            canvas.drawText("Nenhum registro de KM.", width / 2f, height / 2f, texto)
+            canvas.drawText("Adicione abastecimentos para ver a autonomia.", width / 2f, height / 2f, texto)
             texto.textAlign = Paint.Align.LEFT
             return
         }
@@ -76,8 +84,8 @@ class KmChartView @JvmOverloads constructor(
         val topo = margemSuperior
         val base = (height - margemInferior).coerceAtLeast(topo + dp(40f))
 
-        val menorOriginal = registros.minOf { it.km }
-        val maiorOriginal = registros.maxOf { it.km }
+        val menorOriginal = pontos.minOf { it.kmPorLitro }
+        val maiorOriginal = pontos.maxOf { it.kmPorLitro }
         val folga = if (maiorOriginal == menorOriginal) {
             maxOf(1.0, kotlin.math.abs(maiorOriginal) * 0.05)
         } else {
@@ -96,34 +104,34 @@ class KmChartView @JvmOverloads constructor(
             canvas.drawText(formatoKm.format(valor), esquerda - dp(8f), y + dp(4f), textoPequeno)
         }
         textoPequeno.textAlign = Paint.Align.LEFT
-        canvas.drawText("KM", esquerda, topo - dp(10f), texto)
+        canvas.drawText("km/L", esquerda, topo - dp(10f), texto)
         canvas.drawLine(esquerda, topo, esquerda, base, grade)
 
-        val primeiroTempo = registros.first().timestamp
-        val ultimoTempo = registros.last().timestamp
+        val primeiroTempo = pontos.first().timestamp
+        val ultimoTempo = pontos.last().timestamp
         val faixaTempo = ultimoTempo - primeiroTempo
         val caminho = Path()
-        registros.forEachIndexed { indice, registro ->
+        pontos.forEachIndexed { indice, ponto ->
             val proporcaoX = when {
-                registros.size == 1 -> 0.5f
-                faixaTempo > 0L -> (registro.timestamp - primeiroTempo).toFloat() / faixaTempo.toFloat()
-                else -> indice.toFloat() / (registros.lastIndex).coerceAtLeast(1)
+                pontos.size == 1 -> 0.5f
+                faixaTempo > 0L -> (ponto.timestamp - primeiroTempo).toFloat() / faixaTempo.toFloat()
+                else -> indice.toFloat() / (pontos.lastIndex).coerceAtLeast(1)
             }
             val x = esquerda + (direita - esquerda) * proporcaoX
-            val proporcaoY = ((maiorKm - registro.km) / faixaKm).toFloat()
+            val proporcaoY = ((maiorKm - ponto.kmPorLitro) / faixaKm).toFloat()
             val y = topo + (base - topo) * proporcaoY
             if (indice == 0) caminho.moveTo(x, y) else caminho.lineTo(x, y)
         }
         canvas.drawPath(caminho, linhaGrafico)
 
-        registros.forEachIndexed { indice, registro ->
+        pontos.forEachIndexed { indice, ponto ->
             val proporcaoX = when {
-                registros.size == 1 -> 0.5f
-                faixaTempo > 0L -> (registro.timestamp - primeiroTempo).toFloat() / faixaTempo.toFloat()
-                else -> indice.toFloat() / (registros.lastIndex).coerceAtLeast(1)
+                pontos.size == 1 -> 0.5f
+                faixaTempo > 0L -> (ponto.timestamp - primeiroTempo).toFloat() / faixaTempo.toFloat()
+                else -> indice.toFloat() / (pontos.lastIndex).coerceAtLeast(1)
             }
             val x = esquerda + (direita - esquerda) * proporcaoX
-            val proporcaoY = ((maiorKm - registro.km) / faixaKm).toFloat()
+            val proporcaoY = ((maiorKm - ponto.kmPorLitro) / faixaKm).toFloat()
             val y = topo + (base - topo) * proporcaoY
             canvas.drawCircle(x, y, dp(4f), pontoGrafico)
         }
