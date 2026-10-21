@@ -8,7 +8,8 @@ import java.util.UUID
 data class KmRecord(
     val id: String,
     val km: Double,
-    val timestamp: Long
+    val timestamp: Long,
+    val litersFueled: Double? = null
 )
 
 data class VehicleRecord(
@@ -40,7 +41,12 @@ object VehicleStorage {
                 history += KmRecord(
                     id = recordJson.optString("id", UUID.randomUUID().toString()),
                     km = recordJson.optDouble("km", Double.NaN),
-                    timestamp = recordJson.optLong("timestamp", 0L)
+                    timestamp = recordJson.optLong("timestamp", 0L),
+                    litersFueled = if (recordJson.has("litersFueled") && !recordJson.isNull("litersFueled")) {
+                        recordJson.optDouble("litersFueled").takeIf { it > 0.0 }
+                    } else {
+                        null
+                    }
                 )
             }
 
@@ -63,6 +69,7 @@ object VehicleStorage {
                         .put("id", record.id)
                         .put("km", record.km)
                         .put("timestamp", record.timestamp)
+                        .put("litersFueled", record.litersFueled)
                 )
             }
             vehicleArray.put(
@@ -97,7 +104,7 @@ object VehicleStorage {
         return vehicle
     }
 
-    fun addKm(context: Context, vehicleId: String, km: Double): Boolean {
+    fun addRefuel(context: Context, vehicleId: String, km: Double, litersFueled: Double): Boolean {
         val vehicles = load(context)
         val vehicle = vehicles.firstOrNull { it.id == vehicleId } ?: return false
         val nextTimestamp = System.currentTimeMillis().coerceAtLeast(
@@ -106,7 +113,8 @@ object VehicleStorage {
         vehicle.history += KmRecord(
             id = UUID.randomUUID().toString(),
             km = km,
-            timestamp = nextTimestamp
+            timestamp = nextTimestamp,
+            litersFueled = litersFueled
         )
         save(context, vehicles)
         return true

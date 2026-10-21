@@ -42,21 +42,25 @@ class HistoryActivity : AppCompatActivity() {
     private fun abrirPopupAdicionarKm() {
         val conteudo = layoutInflater.inflate(R.layout.dialog_add_km, null)
         val campoKm = conteudo.findViewById<EditText>(R.id.campoKmHistorico)
+        val campoLitros = conteudo.findViewById<EditText>(R.id.campoLitrosAbastecidos)
         val dialogo = AlertDialog.Builder(this)
-            .setTitle("Novo registro de KM")
+            .setTitle("Registrar abastecimento")
             .setView(conteudo)
             .setNegativeButton("Cancelar", null)
-            .setPositiveButton("Adicionar", null)
+            .setPositiveButton("Salvar", null)
             .create()
 
         dialogo.setOnShowListener {
             dialogo.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val kmTexto = campoKm.text.toString().trim()
                 val km = kmTexto.replace(',', '.').toDoubleOrNull()
+                val litrosTexto = campoLitros.text.toString().trim()
+                val litros = litrosTexto.replace(',', '.').toDoubleOrNull()
                 val veiculo = VehicleStorage.find(this, vehicleId)
 
                 when {
                     km == null || km < 0 -> campoKm.error = "Digite um KM válido"
+                    litros == null || litros <= 0 -> campoLitros.error = "Digite uma quantidade de litros válida"
                     veiculo == null -> {
                         dialogo.dismiss()
                         finish()
@@ -64,7 +68,7 @@ class HistoryActivity : AppCompatActivity() {
                     veiculo.currentKm != null && km < veiculo.currentKm!! -> {
                         campoKm.error = "O KM deve ser igual ou maior que ${formatarKm(veiculo.currentKm!!)}"
                     }
-                    VehicleStorage.addKm(this, vehicleId, km) -> {
+                    VehicleStorage.addRefuel(this, vehicleId, km, litros) -> {
                         atualizarHistorico()
                         dialogo.dismiss()
                     }
@@ -111,7 +115,9 @@ class HistoryActivity : AppCompatActivity() {
             val data = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR"))
                 .format(Date(registro.timestamp))
             linha.addView(TextView(this).apply {
-                text = "${formatarKm(registro.km)} km\n$data"
+                val litros = registro.litersFueled?.let { "${formatarKm(it)} L abastecidos\n" }
+                    ?: "Abastecimento inicial\n"
+                text = "${formatarKm(registro.km)} km\n$litros$data"
                 textSize = 16f
                 setTextColor(Color.DKGRAY)
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)

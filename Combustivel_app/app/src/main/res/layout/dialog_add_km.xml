@@ -12,7 +12,16 @@
         android:id="@+id/campoKmHistorico"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="KM registrado"
+        android:hint="Quilometragem atual (km)"
+        android:inputType="numberDecimal"
+        android:singleLine="true" />
+
+    <EditText
+        android:id="@+id/campoLitrosAbastecidos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="Litros abastecidos"
         android:inputType="numberDecimal"
         android:singleLine="true" />
 
